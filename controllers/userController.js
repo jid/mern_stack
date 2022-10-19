@@ -2,123 +2,122 @@ const User = require('../models/User')
 const Note = require('../models/Note')
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
+const { json } = require('express')
 
 // @desc Get all users
 // @route GET /user
 // @access Private
-const getUser = asyncHandler(async (req, res) => {
-    const users = await User.find().select('-password').lean()
-    if (!users?.length) {
-        return res.status(400).json({ message: 'No users found' })
-    }
+const getUsers = asyncHandler(async (req, res) => {
+  console.log('in getUsers')
+  const users = await User.find().select('-password').lean()
+  console.log(`got users: ${JSON.stringify(users)}`)
 
-    res.json(users)
+  if (!users?.length) {
+    return res.status(400).json({ message: "No users found" })
+  }
+
+  return res.json(users)
 })
 
-// @desc Create new user
+// @desc Create user
 // @route POST /user
 // @access Private
 const createUser = asyncHandler(async (req, res) => {
-    const { username, password, roles } = req.body
+  const { username, password, roles } = req.body
 
-    // Validate data
-    if (!username || !password || !Array.isArray(roles) || !roles.length) {
-        return res.status(400).json({ message: 'All fields are required' })
-    }
+  // Validate data
+  if (!username || !password || !Array.isArray(roles) || !roles.length) {
+    return res.status(400).json({ message: "All fields are required" })
+  }
 
-    // Check for duplicates
-    const duplicate = await User.findOne({ username }).lean().exec()
-    if (duplicate) {
-        return res.status(409).json({ message: 'Duplicate username' })
-    }
+  // check for duplicates
+  const duplicate = await User.findOne({ username }).lean().exec()
+  if (duplicate) {
+    return res.status(409).json({ message: `Duplicate username` })
+  }
 
-    // Hash pwd
-    const pwdHash = await bcrypt.hash(password, 10)
+  // TODO - move salt rounds to configuration file
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 10) // salt rounds
 
-    const userObject = {
-        username,
-        password: pwdHash,
-        roles,
-    }
+  // add new user
+  const newUser = { username, password: hashedPassword, roles }
+  const user = await User.create(newUser)
 
-    // Create and save new user
-    const user = await User.create(userObject)
-
-    if (user) {
-        res.status(201).json({ message: `New user ${username} created` })
-    } else {
-        res.status(400).json({ message: 'Invalid user data' })
-    }
+  if (user) {
+    return res.status(201).json({ message: `New user ${username} created` })
+  } else {
+    return res.status(400).json({ message: 'Invalid user data received' })
+  }
 })
 
-// @desc Update a user
+// @desc Update user
 // @route PATCH /user
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {
-    const { id, username, password, roles, active } = req.body
+  const { id, username, roles, active, password } = req.body
 
-    // Validate data
-    if (!id || !username || !Array.isArray(roles) || !roles.length || typeof (active) !== 'boolean') {
-        return res.status(400).json({ message: 'All fields are required' })
-    }
+  // Validate data
+  if (!id || !username || !roles || Array.isArray(roles) || typeof active !== 'boolean') {
+    return res.status(400).json({ message: 'All fields are required' })
+  }
 
-    const user = await User.findById(id).exec()
-    if (!user) {
-        return res.status(400).json({ message: 'User not found' })
-    }
+  const user = await User.findById(id).exec()
 
-    // Check for duplicates
-    const duplicate = await User.findOne({ username }).lean().exec()
-    if (duplicate && duplicate?._id.toString() !== id) {
-        return res.status(409).json({ message: 'Duplicate username' })
-    }
+  if (!user) {
+    return res.status(400).json({ message: 'User not found' })
+  }
 
-    // Update user
-    user.username = username
-    user.roles = roles
-    user.active = active
+  const duplicate = await User.findOne({ username }).lean().exec()
+  // Allow updates to the oryginal user
+  if (duplicate?._id.toString() !== id) {
+    return res.status(409).json({ message: 'Duplicate username' })
+  }
 
-    if (password) {
-        user.password = await bcrypt.hash(password, 10)
-    }
+  user.username = username
+  user.roles = roles
+  user.active = active
 
-    const updatedUser = await user.save()
+  if (password) {
+    // TODO - move salt rounds to configuration file
+    user.password = bcrypt.hash(password, 10) // salt rounds
+  }
 
-    res.json({ message: `${user.username} updated` })
+  const updatedUser = await user.save()
+
+  return res.status(200).json({ message: `User ${username} upadted` })
 })
 
-// @desc Delete a user
+// @desc Delete user
 // @route DELETE /user
 // @access Private
 const deleteUser = asyncHandler(async (req, res) => {
-    const { id } = req.body
+  const { id } = req.body
 
-    if (!id) {
-        return res.status(400).json({ message: 'User ID required' })
-    }
+  // Validate data
+  if (!id) {
+    return res.status(400).json({ message: 'User id is required' })
+  }
 
-    // Check for existsing notes
-    const note = await Note.findOne({ user: id }).lean().exec()
-    if (note) {
-        return res.status(400).json({ message: 'User has assigned notes' })
-    }
+  const note = await Note.findOne({ user: id }).lean().exec()
+  if (note) {
+    return res.status(400).json({ message: 'User has assigned notes' })
+  }
 
-    const user = await User.findById(id).exec()
+  const user = await User.findById(id).exec()
+  if (!user) {
+    return res.status(400).json({ message: 'User not found' })
+  }
 
-    if (!user) {
-        res.status(400).json({ message: 'User not found' })
-    }
+  const result = await user.deleteOne()
+  const reply = `Username ${result.username} with ID ${result._id} deleted`
 
-    const result = await user.deleteOne()
-
-    const reply = `${result.username} with ID ${user._id} deleted`
-
-    res.json(reply)
+  return res.status(200).json(reply)
 })
 
 module.exports = {
-    getUser,
-    createUser,
-    updateUser,
-    deleteUser
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser
 }

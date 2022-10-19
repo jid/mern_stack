@@ -1,11 +1,13 @@
+// import { IRouter, IRouterMatcher } from 'express'
 const express = require('express')
+const { getUsers, createUser, updateUser, deleteUser } = require('../controllers/userController')
+
 const router = express.Router()
-const { getUser, createUser, updateUser, deleteUser } = require('../controllers/userController')
 
 router.route('/')
-    .get(getUser)
-    .post(createUser)
-    .patch(updateUser)
-    .delete(deleteUser)
+  .get(getUsers)
+  .post(createUser)
+  .patch(updateUser)
+  .delete(deleteUser)
 
 module.exports = router

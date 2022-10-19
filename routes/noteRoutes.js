@@ -1,11 +1,13 @@
+// import { IRouter, IRouterMatcher } from 'express'
 const express = require('express')
+const { getNotes, createNote, updateNote, deleteNote } = require('../controllers/noteController')
+
 const router = express.Router()
-const { getNote, createNote, updateNote, deleteNote } = require('../controllers/noteController')
 
 router.route('/')
-    .get(getNote)
-    .post(createNote)
-    .patch(updateNote)
-    .delete(deleteNote)
+  .get(getNotes)
+  .post(createNote)
+  .patch(updateNote)
+  .delete(deleteNote)
 
 module.exports = router
