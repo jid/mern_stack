@@ -58,7 +58,7 @@ const updateUser = asyncHandler(async (req, res) => {
   const { id, username, roles, active, password } = req.body
 
   // Validate data
-  if (!id || !username || !roles || Array.isArray(roles) || typeof active !== 'boolean') {
+  if (!id || !username || !roles || !Array.isArray(roles) || typeof active !== 'boolean') {
     return res.status(400).json({ message: 'All fields are required' })
   }
 
@@ -70,7 +70,7 @@ const updateUser = asyncHandler(async (req, res) => {
 
   const duplicate = await User.findOne({ username }).lean().exec()
   // Allow updates to the oryginal user
-  if (duplicate?._id.toString() !== id) {
+  if (duplicate && duplicate?._id.toString() !== id) {
     return res.status(409).json({ message: 'Duplicate username' })
   }
 

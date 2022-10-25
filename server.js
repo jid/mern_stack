@@ -30,8 +30,8 @@ app.use(cookieParser())
 
 app.use('/', express.static(path.join(__dirname, 'public')))
 app.use('/', rootRouter)
-app.use('/user', userRouter)
-app.use('/note', noteRouter)
+app.use('/users', userRouter)
+app.use('/notes', noteRouter)
 
 app.all('*', (req, res) => {
   res.status(404)
