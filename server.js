@@ -10,8 +10,9 @@ const corsOptions = require('./config/corsOptions')
 const connectDB = require('./config/dbConn')
 const mongoose = require('mongoose')
 const rootRouter = require('./routes/root')
+const authRouter = require('./routes/authRoutes')
 const userRouter = require('./routes/userRoutes')
-const noteRouter = require('./routes/noteRoutes.js')
+const noteRouter = require('./routes/noteRoutes')
 require('dotenv').config()
 
 const PORT = process.env.PORT || 3500
@@ -29,7 +30,8 @@ app.use(express.json())
 app.use(cookieParser())
 
 app.use('/', express.static(path.join(__dirname, 'public')))
-app.use('/', rootRouter)
+app.use("/", rootRouter)
+app.use('/auth', authRouter)
 app.use('/users', userRouter)
 app.use('/notes', noteRouter)
 
