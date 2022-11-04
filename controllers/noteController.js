@@ -1,12 +1,10 @@
-const asyncHandler = require('express-async-handler')
-const bcrypt = require('bcrypt')
 const User = require('../models/User')
 const Note = require('../models/Note')
 
 // @desc GET all notes
 // @route GET /note
 // @access Private
-const getNotes = asyncHandler(async (req, res) => {
+const getNotes = async (req, res) => {
   const notes = await Note.find().lean()
 
   if (!notes.length) {
@@ -19,12 +17,12 @@ const getNotes = asyncHandler(async (req, res) => {
   }))
 
   return res.json(notesWithUser)
-})
+}
 
 // // @desc create a note
 // // @route POST /note
 // // @access Private
-const createNote = asyncHandler(async (req, res) => {
+const createNote = async (req, res) => {
   const { user: userId, title, text } = req.body
 
   // Validate data
@@ -37,7 +35,7 @@ const createNote = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Invalid user' })
   }
 
-  const duplicate = await Note.findOne({ title, user: userId }).lean().exec()
+  const duplicate = await Note.findOne({ title, user: userId }).collation({ locale: 'simple', strength: 3 }).lean().exec()
   if (duplicate) {
     return res.status(409).json({ message: 'Duplicate note' })
   }
@@ -55,12 +53,12 @@ const createNote = asyncHandler(async (req, res) => {
   }
 
   return res.status(201).json({ message: `Note for user ${user.username} created` })
-})
+}
 
 // // @desc Update a note
 // // @route PATCH /note
 // // @access Private
-const updateNote = asyncHandler(async (req, res) => {
+const updateNote = async (req, res) => {
   const { id, user, title, text, completed } = req.body
 
   // validate data
@@ -73,7 +71,7 @@ const updateNote = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Note not found' })
   }
 
-  const duplicate = await Note.findOne({ title }).lean().exec()
+  const duplicate = await Note.findOne({ title }).collation({ locale: 'simple', strength: 3 }).lean().exec()
   if (duplicate && duplicate._id.toString() !== id) {
     return res.status(409).json({ message: 'Duplicate title' })
   }
@@ -86,12 +84,12 @@ const updateNote = asyncHandler(async (req, res) => {
   const updatedNote = await note.save()
 
   return res.status(200).json({ message: 'Note updated' })
-})
+}
 
 // @desc Delete a note
 // @route DELETE /note
 // @access Private
-const deleteNote = asyncHandler(async (req, res) => {
+const deleteNote = async (req, res) => {
   const { id } = req.body
 
   if (!id) {
@@ -106,7 +104,7 @@ const deleteNote = asyncHandler(async (req, res) => {
   const reply = `Note '${result.title}' with ID ${result._id} deleted`
 
   return res.json({ message: reply })
-})
+}
 
 
 module.exports = {

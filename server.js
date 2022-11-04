@@ -1,4 +1,6 @@
 // import { Request, Response } from "express"
+require('dotenv').config()
+require('express-async-errors')
 const express = require('express')
 const app = express()
 const path = require('path')
@@ -13,7 +15,7 @@ const rootRouter = require('./routes/root')
 const authRouter = require('./routes/authRoutes')
 const userRouter = require('./routes/userRoutes')
 const noteRouter = require('./routes/noteRoutes')
-require('dotenv').config()
+
 
 const PORT = process.env.PORT || 3500
 
